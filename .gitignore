@@ -1,1 +1,3 @@
 /target
+/products/*
+!/products/.gitkeep
