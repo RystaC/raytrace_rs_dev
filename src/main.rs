@@ -8,13 +8,19 @@ struct RGB {
     blue: u8,
 }
 
+impl RGB {
+    fn new(red: u8, green: u8, blue: u8) -> Self {
+        RGB { red, green, blue }
+    }
+}
+
 fn main() {
     let width: usize = 100;
     let height: usize = 100;
 
     let mut buffer: Vec<Vec<RGB>> = Vec::with_capacity(height);
     buffer.resize(height, Vec::with_capacity(width));
-    for x in &mut buffer { x.resize(width, RGB{ red: 0, green: 255, blue: 0 }); }
+    for x in &mut buffer { x.resize(width, RGB::new(255, 0, 0)); }
 
 
     let mut file = BufWriter::new(File::create("products/test.ppm").expect("failed to create file."));
