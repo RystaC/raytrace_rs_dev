@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::io::{Write, BufWriter};
 
-#[derive(Clone)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 struct RGB {
     red: u8,
     green: u8,
