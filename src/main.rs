@@ -1,27 +1,10 @@
 extern crate raytrace_rs;
 
-use std::fs::File;
-use std::io::{Write, BufWriter};
+use std::process;
 use std::time::SystemTime;
 
 use raytrace_rs::xorshift::XorShift;
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-struct RGB {
-    red: u8,
-    green: u8,
-    blue: u8,
-}
-
-impl RGB {
-    fn new(red: u8, green: u8, blue: u8) -> Self {
-        RGB { red, green, blue }
-    }
-
-    fn as_bytes(&self) -> [u8; 3] {
-        [self.red, self.green, self.blue]
-    }
-}
+use raytrace_rs::ppm_gen::*;
 
 fn main() {
     let width: usize = 100;
@@ -39,17 +22,9 @@ fn main() {
         }
     }
 
-
-    let mut file = BufWriter::new(File::create("products/test.ppm").expect("failed to create file."));
-
-    file.write_all("P6\n".as_bytes()).unwrap();
-    file.write_all(format!("{} {}\n", width, height).as_bytes()).unwrap();
-    file.write_all("255\n".as_bytes()).unwrap();
-
-    for i in 0..height {
-        for j in 0..width {
-            file.write_all(&buffer[i][j].as_bytes()).unwrap();
-        }
+    if let Err(error) = generate_ppm(&buffer) {
+        eprintln!("Error detected in generating ppm file.");
+        eprintln!("Original error: {}", error);
+        process::exit(1);
     }
-
 }
