@@ -5,7 +5,7 @@ use std::process;
 use raytrace_rs::rgb::RGB;
 use raytrace_rs::ppm_gen::generate_ppm;
 use raytrace_rs::ray::Ray;
-use raytrace_rs::vector::Vector3;
+use raytrace_rs::vector::*;
 
 fn main() {
     let aspect = 16.0 / 9.0;
@@ -42,8 +42,23 @@ fn main() {
     }
 }
 
+fn hit_sphere(center: Vector3, radius: f64, ray: &Ray) -> bool {
+    let oc = ray.origin - center;
+
+    let a = dot(ray.direction, ray.direction);
+    let b = 2.0 * dot(oc, ray.direction);
+    let c = dot(oc, oc) - radius.powf(2.0);
+
+    let discriminant = b * b - 4.0 * a * c;
+
+    discriminant > 0.0
+}
+
 fn ray_color(ray: &Ray) -> RGB {
-    let unit = ray.direction.normalize();
-    let t = 0.5 * (unit.y + 0.5);
-    RGB::from((1.0 - t) * Vector3::new(0.5, 0.7, 1.0) + t * Vector3::new(1.0, 1.0, 1.0))
+    if hit_sphere(Vector3::new(0.0, 0.0, -1.0), 0.5, &ray) { RGB::new(1.0, 0.0, 0.0)}
+    else {
+        let unit = ray.direction.normalize();
+        let t = 0.5 * (unit.y + 0.5);
+        RGB::from((1.0 - t) * Vector3::new(0.5, 0.7, 1.0) + t * Vector3::new(1.0, 1.0, 1.0))
+    }
 }
