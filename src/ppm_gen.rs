@@ -14,7 +14,7 @@ pub fn generate_ppm(buffer: &Vec<Vec<RGB>>) -> Result<(), Box<dyn Error>> {
     file.write_all(format!("{} {}\n", width, height).as_bytes())?;
     file.write_all("255\n".as_bytes())?;
 
-    for i in 0..height {
+    for i in (0..height).rev() {
         for j in 0..width {
             file.write_all(&buffer[i][j].as_bytes())?;
         }

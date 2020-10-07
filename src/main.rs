@@ -42,7 +42,7 @@ fn main() {
     }
 }
 
-fn hit_sphere(center: Vector3, radius: f64, ray: &Ray) -> bool {
+fn hit_sphere(center: Vector3, radius: f64, ray: &Ray) -> f64 {
     let oc = ray.origin - center;
 
     let a = dot(ray.direction, ray.direction);
@@ -51,14 +51,20 @@ fn hit_sphere(center: Vector3, radius: f64, ray: &Ray) -> bool {
 
     let discriminant = b * b - 4.0 * a * c;
 
-    discriminant > 0.0
+    if discriminant < 0.0 { -1.0 }
+    else { (-b - discriminant.sqrt()) / (2.0 * a)}
 }
 
 fn ray_color(ray: &Ray) -> RGB {
-    if hit_sphere(Vector3::new(0.0, 0.0, -1.0), 0.5, &ray) { RGB::new(1.0, 0.0, 0.0)}
+    let t = hit_sphere(Vector3::new(0.0, 0.0, -1.0), 0.5, &ray);
+    if t > 0.0 {
+        let n = (ray.at(t) - Vector3::new(0.0, 0.0, -1.0)).normalize();
+        RGB::from(0.5 * (n + Vector3::new(1.0, 1.0, 1.0)))
+    }
+
     else {
         let unit = ray.direction.normalize();
-        let t = 0.5 * (unit.y + 0.5);
-        RGB::from((1.0 - t) * Vector3::new(0.5, 0.7, 1.0) + t * Vector3::new(1.0, 1.0, 1.0))
+        let t = 0.5 * (unit.y + 1.0);
+        RGB::from((1.0 - t) * Vector3::new(1.0, 1.0, 1.0) + t * Vector3::new(0.5, 0.7, 1.0))
     }
 }
