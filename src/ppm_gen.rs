@@ -4,7 +4,7 @@ use std::error::Error;
 
 use super::rgb::RGB;
 
-pub fn generate_ppm(buffer: &Vec<Vec<RGB>>) -> Result<(), Box<dyn Error>> {
+pub fn generate_ppm(buffer: &Vec<Vec<RGB>>, samples: i32) -> Result<(), Box<dyn Error>> {
     let width = buffer[0].len();
     let height = buffer.len();
 
@@ -16,7 +16,7 @@ pub fn generate_ppm(buffer: &Vec<Vec<RGB>>) -> Result<(), Box<dyn Error>> {
 
     for i in (0..height).rev() {
         for j in 0..width {
-            file.write_all(&buffer[i][j].as_bytes())?;
+            file.write_all(&buffer[i][j].as_bytes(samples))?;
         }
     }
 

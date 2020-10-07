@@ -29,6 +29,14 @@ pub fn cross(lhs: Vector3, rhs: Vector3) -> Vector3 {
     Vector3 { x: lhs.y * rhs.z - lhs.z * rhs.y, y: lhs.z * rhs.x - lhs.x * rhs.z, z: lhs.x * rhs.y - lhs.y * rhs.x }
 }
 
+impl Neg for Vector3 {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        Self { x: -self.x, y: -self.y, z: -self.z }
+    }
+}
+
 impl Add for Vector3 {
     type Output = Self;
 
