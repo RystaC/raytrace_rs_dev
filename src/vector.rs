@@ -1,4 +1,7 @@
 use std::ops::*;
+use std::f64::consts::*;
+
+use crate::xorshift::*;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Vector3 {
@@ -10,6 +13,13 @@ pub struct Vector3 {
 impl Vector3 {
     pub fn new(x: f64, y: f64, z: f64) -> Self {
         Vector3 { x, y, z }
+    }
+
+    pub fn randomized(rand: &mut XorShift) -> Self {
+        let a = rand.next_bounded(0.0, 2.0 * PI);
+        let z = rand.next_bounded(-1.0, 1.0);
+        let r = f64::sqrt(1.0 - z * z);
+        Vector3::new(r * f64::cos(a), r * f64::sin(a), z)
     }
 
     pub fn norm(&self) -> f64 {

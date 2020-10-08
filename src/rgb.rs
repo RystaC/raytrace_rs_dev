@@ -41,8 +41,7 @@ fn clamp(x: f64) -> f64 {
 
 #[inline(always)]
 fn gamma_correct(x: f64) -> u8 {
-    //(x.powf(1.0 / 2.2) * 255.0 + 0.5) as u8
-    (x * 255.0 + 0.5) as u8
+    (x.powf(1.0 / 2.2) * 255.0 + 0.5) as u8
 }
 
 impl AddAssign for RGB {

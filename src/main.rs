@@ -59,8 +59,8 @@ fn main() {
 fn ray_color(ray: &Ray, world: &HittableList, depth: i32, rand: &mut XorShift) -> RGB {
     let mut record = HitRecord::new();
     if depth <= 0 { return RGB::new(0.0, 0.0, 0.0); }
-    if world.hit(ray, 0.0, f64::MAX, &mut record) {
-        let target = record.position + record.normal + rand_unit_sphere(rand);
+    if world.hit(ray, 0.0001, f64::MAX, &mut record) {
+        let target = record.position + record.normal + Vector3::randomized(rand);
         0.5 * ray_color(&Ray::new(record.position, target - record.position), world, depth - 1, rand)
     }
 
