@@ -94,6 +94,7 @@ fn ray_color(ray: &Ray, world: &HittableList, depth: i32, rand: &mut XorShift) -
     }
 }
 
+#[allow(dead_code)]
 fn rand_unit_sphere(rand: &mut XorShift) -> Vector3 {
     loop {
         let p = Vector3::new(rand.next_bounded(-1.0, 1.0), rand.next_bounded(-1.0, 1.0), rand.next_bounded(-1.0, 1.0));
@@ -101,6 +102,7 @@ fn rand_unit_sphere(rand: &mut XorShift) -> Vector3 {
     }
 }
 
+#[allow(dead_code)]
 fn rand_hemisphere(normal: Vector3, rand: &mut XorShift) -> Vector3 {
     let unit = rand_unit_sphere(rand);
     if dot(unit, normal) > 0.0 { unit }

@@ -19,6 +19,7 @@ impl Lambertian {
 }
 
 impl Material for Lambertian {
+    #[allow(unused_variables)]
     fn scatter(&self, ray_in: &Ray, record: &HitRecord, attenuation: &mut RGB, scattered: &mut Ray, rand: &mut XorShift) -> bool {
         let scatter_direction = record.normal + Vector3::randomized(rand);
         *scattered = Ray::new(record.position, scatter_direction);
@@ -38,6 +39,7 @@ impl Metal {
 }
 
 impl Material for Metal {
+    #[allow(unused_variables)]
     fn scatter(&self, ray_in: &Ray, record: &HitRecord, attenuation: &mut RGB, scattered: &mut Ray, rand: &mut XorShift) -> bool {
         let reflected = reflect(ray_in.direction.normalize(), record.normal);
         *scattered = Ray::new(record.position, reflected);
