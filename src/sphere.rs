@@ -1,17 +1,21 @@
+use std::rc::Rc;
+
 use crate::vector::*;
 use crate::ray::Ray;
+use crate::material::Material;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct HitRecord {
     pub position: Vector3,
     pub normal: Vector3,
+    pub material: Rc<dyn Material>,
     pub t: f64,
     pub front: bool,
 }
 
 impl HitRecord {
-    pub fn new() -> Self {
-        Self { position: Vector3::new(0.0, 0.0, 0.0), normal: Vector3::new(0.0, 0.0, 0.0), t: 0.0, front: false }
+    pub fn new(material: Rc<dyn Material>) -> Self {
+        Self { position: Vector3::new(0.0, 0.0, 0.0), normal: Vector3::new(0.0, 0.0, 0.0), material, t: 0.0, front: false }
     }
     #[inline(always)]
     pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: Vector3) {
@@ -27,11 +31,12 @@ pub trait Hittable {
 pub struct Sphere {
     pub center: Vector3,
     pub radius: f64,
+    pub material: Rc<dyn Material>,
 }
 
 impl Sphere {
-    pub fn new(center: Vector3, radius: f64) -> Self {
-        Self { center, radius }
+    pub fn new(center: Vector3, radius: f64, material: Rc<dyn Material>) -> Self {
+        Self { center, radius, material }
     }
 }
 
@@ -53,6 +58,7 @@ impl Hittable for Sphere {
                 record.position = ray.at(record.t);
                 let outward_normal = (record.position - self.center) / self.radius;
                 record.set_face_normal(ray, outward_normal);
+                record.material = self.material.clone();
                 return true;
             }
 
@@ -62,6 +68,7 @@ impl Hittable for Sphere {
                 record.position = ray.at(record.t);
                 let outward_normal = (record.position - self.center) / self.radius;
                 record.set_face_normal(ray, outward_normal);
+                record.material = self.material.clone();
                 return true;
             }
 

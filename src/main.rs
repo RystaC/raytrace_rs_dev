@@ -1,5 +1,6 @@
 use std::process;
 use std::time::{Instant, SystemTime};
+use std::rc::Rc;
 
 use raytrace_rs::xorshift::*;
 use raytrace_rs::rgb::*;
@@ -9,26 +10,41 @@ use raytrace_rs::vector::*;
 use raytrace_rs::sphere::*;
 use raytrace_rs::hittable_list::*;
 use raytrace_rs::camera::*;
+use raytrace_rs::material::*;
 
 fn main() {
+    // RNG
     let mut rand = XorShift::new(SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos() as u64);
 
+    // Image
     let aspect = 16.0 / 9.0;
     let width: usize = 400;
     let height: usize = (width as f64 / aspect) as usize;
     let samples = 100;
     let max_depth = 50;
 
+    // World
     let mut world = HittableList::new();
-    world.add(Box::new(Sphere::new(Vector3::new(0.0, 0.0, -1.0), 0.5)));
-    world.add(Box::new(Sphere::new(Vector3::new(0.0, -100.5, -1.0), 100.0)));
 
+    let material_ground = Rc::from(Lambertian::new(RGB::new(0.8, 0.8, 0.0)));
+    let material_center = Rc::from(Lambertian::new(RGB::new(0.7, 0.3, 0.3)));
+    let material_left   = Rc::from(Metal::new(RGB::new(0.8, 0.8, 0.8)));
+    let material_right  = Rc::from(Metal::new(RGB::new(0.8, 0.6, 0.2)));
+
+    world.add(Box::new(Sphere::new(Vector3::new(0.0, -100.5, -1.0), 100.0, material_ground)));
+    world.add(Box::new(Sphere::new(Vector3::new(0.0, 0.0, -1.0), 0.5, material_center)));
+    world.add(Box::new(Sphere::new(Vector3::new(-1.0, 0.0, -1.0), 0.5, material_left)));
+    world.add(Box::new(Sphere::new(Vector3::new(1.0, 0.0, -1.0), 0.5, material_right)));
+
+    // Camera
     let camera = Camera::new();
 
+    // Buffer
     let mut buffer: Vec<Vec<RGB>> = Vec::with_capacity(height);
     buffer.resize(height, Vec::with_capacity(width));
     for x in &mut buffer { x.resize(width, RGB::new(0.0, 0.0, 0.0)); }
 
+    // Trace
     eprintln!("Generate rays:");
     let start = Instant::now();
 
@@ -49,6 +65,7 @@ fn main() {
     let end = start.elapsed();
     eprintln!("\n\nFinished. ({}.{:03} seconds elapsed)", end.as_secs(), end.subsec_nanos() / 1000000);
 
+    // Generate Image
     if let Err(error) = generate_ppm(&buffer, samples) {
         eprintln!("\nError detected in generating ppm file.");
         eprintln!("Original error: {}", error);
@@ -57,11 +74,17 @@ fn main() {
 }
 
 fn ray_color(ray: &Ray, world: &HittableList, depth: i32, rand: &mut XorShift) -> RGB {
-    let mut record = HitRecord::new();
+    let mut record = HitRecord::new(Rc::from(Lambertian::new(RGB::new(0.0, 0.0, 0.0))));
+
     if depth <= 0 { return RGB::new(0.0, 0.0, 0.0); }
+
     if world.hit(ray, 0.0001, f64::MAX, &mut record) {
-        let target = record.position + record.normal + Vector3::randomized(rand);
-        0.5 * ray_color(&Ray::new(record.position, target - record.position), world, depth - 1, rand)
+        let mut scattered = Ray::new(Vector3::new(0.0, 0.0, 0.0), Vector3::new(0.0, 0.0, 0.0));
+        let mut attenuation = RGB::new(0.0, 0.0, 0.0);
+        if record.material.scatter(ray, &record, &mut attenuation, &mut scattered, rand) {
+            attenuation * ray_color(&scattered, world, depth - 1, rand)
+        }
+        else { RGB::new(0.0, 0.0, 0.0) }
     }
 
     else {
@@ -76,4 +99,10 @@ fn rand_unit_sphere(rand: &mut XorShift) -> Vector3 {
         let p = Vector3::new(rand.next_bounded(-1.0, 1.0), rand.next_bounded(-1.0, 1.0), rand.next_bounded(-1.0, 1.0));
         if dot(p, p) < 1.0 { return p; }
     }
+}
+
+fn rand_hemisphere(normal: Vector3, rand: &mut XorShift) -> Vector3 {
+    let unit = rand_unit_sphere(rand);
+    if dot(unit, normal) > 0.0 { unit }
+    else { -unit }
 }

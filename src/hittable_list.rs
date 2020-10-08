@@ -21,15 +21,16 @@ impl HittableList {
 
 impl Hittable for HittableList {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64, record: &mut HitRecord) -> bool {
-        let mut temp = *record;
+        let mut temp = record.clone();
         let mut hit_any = false;
         let mut closest = t_max;
 
         for object in self.objects.iter() {
             if object.hit(ray, t_min, closest, &mut temp) {
+                let tmp = temp.clone();
                 hit_any = true;
-                closest = temp.t;
-                *record = temp;
+                closest = tmp.t;
+                *record = tmp;
             }
         }
 
