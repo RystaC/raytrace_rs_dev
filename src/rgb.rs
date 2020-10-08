@@ -1,4 +1,4 @@
-use super::vector::Vector3;
+use crate::vector::Vector3;
 use std::ops::*;
 
 #[derive(Clone, Copy, Debug)]
@@ -52,5 +52,21 @@ impl AddAssign for RGB {
             green: self.green + rhs.green,
             blue: self.blue + rhs.blue
         }
+    }
+}
+
+impl Mul<f64> for RGB {
+    type Output = Self;
+
+    fn mul(self, rhs: f64) -> Self::Output {
+        Self { red: self.red * rhs, green: self.green * rhs, blue: self.blue * rhs }
+    }
+}
+
+impl Mul<RGB> for f64 {
+    type Output = RGB;
+
+    fn mul(self, rhs: RGB) -> Self::Output {
+        rhs * self
     }
 }

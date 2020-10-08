@@ -1,5 +1,3 @@
-extern crate raytrace_rs;
-
 use raytrace_rs::vector::*;
 
 #[test]

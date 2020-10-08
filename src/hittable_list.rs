@@ -1,4 +1,4 @@
-use super::sphere::*;
+use crate::sphere::*;
 use super::ray::Ray;
 
 pub struct HittableList {

@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::{Write, BufWriter};
 use std::error::Error;
 
-use super::rgb::RGB;
+use crate::rgb::RGB;
 
 pub fn generate_ppm(buffer: &Vec<Vec<RGB>>, samples: i32) -> Result<(), Box<dyn Error>> {
     let width = buffer[0].len();

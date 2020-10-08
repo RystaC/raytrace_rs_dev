@@ -28,4 +28,12 @@ impl XorShift {
         self.w = (self.w ^ (self.w >> 19)) ^ (t ^ (t >> 8));
         self.w
     }
+
+    pub fn next_normalize(&mut self) -> f64 {
+        self.next() as f64 / u64::MAX as f64
+    }
+
+    pub fn next_bounded(&mut self, min: f64, max: f64) -> f64 {
+        min + (max - min) * self.next_normalize()
+    }
 }
