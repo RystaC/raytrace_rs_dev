@@ -43,6 +43,13 @@ pub fn reflect(v: Vector3, n: Vector3) -> Vector3 {
     v - 2.0 * dot(v, n) * n
 }
 
+pub fn refract(uv: Vector3, n: Vector3, eoe: f64) -> Vector3 {
+    let cos_theta = dot(-uv, n);
+    let r_perp = eoe * (uv + cos_theta * n);
+    let r_parallel = -f64::sqrt(f64::abs(1.0 - dot(r_perp, r_perp))) * n;
+    r_perp + r_parallel
+}
+
 impl Neg for Vector3 {
     type Output = Self;
 

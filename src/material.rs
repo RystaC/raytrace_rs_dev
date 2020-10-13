@@ -55,3 +55,25 @@ fn rand_unit_sphere(rand: &mut XorShift) -> Vector3 {
         if dot(p, p) < 1.0 { return p; }
     }
 }
+
+pub struct Dielectric {
+    ref_idx: f64,
+}
+
+impl Dielectric {
+    pub fn new(ref_idx: f64) -> Self {
+        Self { ref_idx }
+    }
+}
+
+impl Material for Dielectric {
+    #[allow(unused_variables)]
+    fn scatter(&self, ray_in: &Ray, record: &HitRecord, attenuation: &mut RGB, scattered: &mut Ray, rand: &mut XorShift) -> bool {
+        *attenuation = RGB::new(1.0, 1.0, 1.0);
+        let eoe = if record.front { 1.0 / self.ref_idx } else { self.ref_idx };
+        let unit = ray_in.direction.normalize();
+        let refracted = refract(unit, record.normal, eoe);
+        *scattered = Ray::new(record.position, refracted);
+        true
+    }
+}
