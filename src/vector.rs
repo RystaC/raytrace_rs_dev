@@ -22,6 +22,13 @@ impl Vector3 {
         Vector3::new(r * f64::cos(a), r * f64::sin(a), z)
     }
 
+    pub fn rand_in_unit_disk(rand: &mut XorShift) -> Self {
+        loop {
+            let p = Self { x: rand.next_bounded(-1.0, 1.0), y: rand.next_bounded(-1.0, 1.0), z: 0.0 };
+            if dot(p, p) < 1.0 { return p };
+        }
+    }
+
     pub fn norm(&self) -> f64 {
         f64::sqrt(f64::powf(self.x, 2.0) + f64::powf(self.y, 2.0) + f64::powf(self.z, 2.0))
     }
