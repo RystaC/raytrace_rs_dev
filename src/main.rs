@@ -20,7 +20,7 @@ fn main() {
     let aspect = 16.0 / 9.0;
     let width: usize = 400;
     let height: usize = (width as f64 / aspect) as usize;
-    let samples = 100;
+    let samples = 128;
     let max_depth = 50;
 
     // World
@@ -28,8 +28,8 @@ fn main() {
 
     let material_ground = Rc::from(Lambertian::new(RGB::new(0.8, 0.8, 0.0)));
     let material_center = Rc::from(Lambertian::new(RGB::new(0.7, 0.3, 0.3)));
-    let material_left   = Rc::from(Metal::new(RGB::new(0.8, 0.8, 0.8)));
-    let material_right  = Rc::from(Metal::new(RGB::new(0.8, 0.6, 0.2)));
+    let material_left   = Rc::from(Metal::new(RGB::new(0.8, 0.8, 0.8), 0.3));
+    let material_right  = Rc::from(Metal::new(RGB::new(0.8, 0.6, 0.2), 1.0));
 
     world.add(Box::new(Sphere::new(Vector3::new(0.0, -100.5, -1.0), 100.0, material_ground)));
     world.add(Box::new(Sphere::new(Vector3::new(0.0, 0.0, -1.0), 0.5, material_center)));
@@ -92,19 +92,4 @@ fn ray_color(ray: &Ray, world: &HittableList, depth: i32, rand: &mut XorShift) -
         let t = 0.5 * (unit.y + 1.0);
         RGB::from((1.0 - t) * Vector3::new(1.0, 1.0, 1.0) + t * Vector3::new(0.5, 0.7, 1.0))
     }
-}
-
-#[allow(dead_code)]
-fn rand_unit_sphere(rand: &mut XorShift) -> Vector3 {
-    loop {
-        let p = Vector3::new(rand.next_bounded(-1.0, 1.0), rand.next_bounded(-1.0, 1.0), rand.next_bounded(-1.0, 1.0));
-        if dot(p, p) < 1.0 { return p; }
-    }
-}
-
-#[allow(dead_code)]
-fn rand_hemisphere(normal: Vector3, rand: &mut XorShift) -> Vector3 {
-    let unit = rand_unit_sphere(rand);
-    if dot(unit, normal) > 0.0 { unit }
-    else { -unit }
 }
