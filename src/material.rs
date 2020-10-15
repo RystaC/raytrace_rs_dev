@@ -4,7 +4,7 @@ use crate::ray::*;
 use crate::vector::*;
 use crate::xorshift::*;
 
-pub trait Material {
+pub trait Material: Sync + Send {
     fn scatter(&self, ray_in: &Ray, record: &HitRecord, attenuation: &mut RGB, scattered: &mut Ray, rand: &mut XorShift) -> bool;
 }
 

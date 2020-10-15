@@ -1,7 +1,7 @@
 use std::process;
 use std::time::{Instant, SystemTime};
-use std::rc::Rc;
-
+use std::sync::Arc;
+use std::thread;
 use raytrace_rs::xorshift::*;
 use raytrace_rs::rgb::*;
 use raytrace_rs::ppm_gen::*;
@@ -11,8 +11,12 @@ use raytrace_rs::sphere::*;
 use raytrace_rs::hittable_list::*;
 use raytrace_rs::camera::*;
 use raytrace_rs::material::*;
+use raytrace_rs::buffer::*;
 
 fn main() {
+    // Config for parallelism
+    let division = 4;
+
     // RNG
     let mut rand = XorShift::new(SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos() as u64);
 
@@ -24,7 +28,7 @@ fn main() {
     let max_depth = 50;
 
     // World
-    let world = random_scene(&mut rand);
+    let world = Arc::from(random_scene(&mut rand));
 
     // Camera
     let lookfrom = Vector3::new(13.0, 2.0, 3.0);
@@ -32,36 +36,64 @@ fn main() {
     let vup = Vector3::new(0.0, 1.0, 0.0);
     let dist_to_focus = 10.0;
     let aperture = 0.1;
-    let camera = Camera::new(lookfrom, lookat, vup, 20.0, aspect, aperture, dist_to_focus);
+    let camera = Arc::from(Camera::new(lookfrom, lookat, vup, 20.0, aspect, aperture, dist_to_focus));
 
     // Buffer
-    let mut buffer: Vec<Vec<RGB>> = Vec::with_capacity(height);
-    buffer.resize(height, Vec::with_capacity(width));
-    for x in &mut buffer { x.resize(width, RGB::new(0.0, 0.0, 0.0)); }
+    let buffer = Buffer::new(width, height);
 
     // Trace
     eprintln!("Generate rays:");
     let start = Instant::now();
 
-    for i in 0..height {
-        for j in 0..width {
-            let mut pixel_color = RGB::new(0.0, 0.0, 0.0);
-            for _s in 0..samples {
-                let u = (j as f64 + rand.next_normalize()) / (width - 1) as f64;
-                let v = (i as f64 + rand.next_normalize()) / (height - 1) as f64;
-                let r = camera.get_ray(u, v, &mut rand);
-                pixel_color += ray_color(&r, &world, max_depth, &mut rand);
+    // Data handler for each threads
+    let mut buffer_handlers = vec![];
+    let mut world_handlers = vec![];
+    let mut camera_handlers = vec![];
+
+    for _ in 0..division {
+        buffer_handlers.push(buffer.clone());
+        world_handlers.push(world.clone());
+        camera_handlers.push(camera.clone());
+    }
+
+    // Thread handler
+    let mut thread_handlers = vec![];
+
+    // Parallelism
+    for (((n, buffer_handler), world_handler), camera_handler) in (0..division)
+                                                                    .zip(buffer_handlers)
+                                                                    .zip(world_handlers)
+                                                                    .zip(camera_handlers)
+    {
+        let handle = thread::spawn(move || {
+            let mut rand_t = XorShift::new(SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos() as u64);
+            let proc_div = height / division;
+            for i in (proc_div * n)..(proc_div * (n + 1)) {
+                for j in 0..width {
+                    let mut pixel_color = RGB::new(0.0, 0.0, 0.0);
+                    for _s in 0..samples {
+                        let u = (j as f64 + rand_t.next_normalize()) / (width - 1) as f64;
+                        let v = (i as f64 + rand_t.next_normalize()) / (height - 1) as f64;
+                        let r = camera_handler.get_ray(u, v, &mut rand_t);
+                        pixel_color += ray_color(&r, &world_handler, max_depth, &mut rand_t);
+                    }
+                    buffer_handler.lock().unwrap()[i][j] = pixel_color;
+                }
+                eprint!("\r    Progress(thread{}): {:.1}% ({}/{}) done.", n, (((i + 1) - proc_div * n) as f64 / proc_div as f64) * 100.0, (i + 1) - proc_div * n, proc_div);
             }
-            buffer[i][j] = pixel_color;
-        }
-        eprint!("\r    Progress: {:.1}% ({}/{}) done.", ((i + 1) as f64 / height as f64) * 100.0, i + 1, height);
+        });
+        thread_handlers.push(handle);
+    }
+
+    for thread_handle in thread_handlers {
+        thread_handle.join().unwrap();
     }
 
     let end = start.elapsed();
     eprintln!("\n\nFinished. ({}.{:03} seconds elapsed)", end.as_secs(), end.subsec_nanos() / 1000000);
 
     // Generate Image
-    if let Err(error) = generate_ppm(&buffer, samples) {
+    if let Err(error) = generate_ppm(&buffer.clone().lock().unwrap(), samples) {
         eprintln!("\nError detected in generating ppm file.");
         eprintln!("Original error: {}", error);
         process::exit(1);
@@ -69,7 +101,7 @@ fn main() {
 }
 
 fn ray_color(ray: &Ray, world: &HittableList, depth: i32, rand: &mut XorShift) -> RGB {
-    let mut record = HitRecord::new(Rc::from(Lambertian::new(RGB::new(0.0, 0.0, 0.0))));
+    let mut record = HitRecord::new(Arc::from(Lambertian::new(RGB::new(0.0, 0.0, 0.0))));
 
     if depth <= 0 { return RGB::new(0.0, 0.0, 0.0); }
 
@@ -92,7 +124,7 @@ fn ray_color(ray: &Ray, world: &HittableList, depth: i32, rand: &mut XorShift) -
 fn random_scene(rand: &mut XorShift) -> HittableList {
     let mut world = HittableList::new();
 
-    let ground_material = Rc::from(Lambertian::new(RGB::new(0.5, 0.5, 0.5)));
+    let ground_material = Arc::from(Lambertian::new(RGB::new(0.5, 0.5, 0.5)));
     world.add(Box::new(Sphere::new(Vector3::new(0.0, -1000.0, 0.0), 1000.0, ground_material)));
 
     for a in -11..11 {
@@ -103,30 +135,30 @@ fn random_scene(rand: &mut XorShift) -> HittableList {
             if (center - Vector3::new(4.0, 0.2, 0.0)).norm() > 0.9 {
                 if choose_mat < 0.8 {
                     let albedo = RGB::new(rand.next_normalize(), rand.next_normalize(), rand.next_normalize());
-                    let sphere_material = Rc::from(Lambertian::new(albedo));
+                    let sphere_material = Arc::from(Lambertian::new(albedo));
                     world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
                 }
                 else if choose_mat < 0.95 {
                     let albedo = RGB::new(rand.next_normalize(), rand.next_normalize(), rand.next_normalize());
                     let fuzz = rand.next_bounded(0.0, 0.5);
-                    let sphere_material = Rc::from(Metal::new(albedo, fuzz));
+                    let sphere_material = Arc::from(Metal::new(albedo, fuzz));
                     world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
                 }
                 else {
-                    let sphere_material = Rc::from(Dielectric::new(1.5));
+                    let sphere_material = Arc::from(Dielectric::new(1.5));
                     world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
                 }
             }
         }
     }
 
-    let material1 = Rc::from(Dielectric::new(1.5));
+    let material1 = Arc::from(Dielectric::new(1.5));
     world.add(Box::new(Sphere::new(Vector3::new(0.0, 1.0, 0.0), 1.0, material1)));
 
-    let material2 = Rc::from(Lambertian::new(RGB::new(0.4, 0.2, 0.1)));
+    let material2 = Arc::from(Lambertian::new(RGB::new(0.4, 0.2, 0.1)));
     world.add(Box::new(Sphere::new(Vector3::new(-4.0, 1.0, 0.0), 1.0, material2)));
 
-    let material3 = Rc::from(Metal::new(RGB::new(0.7, 0.6, 0.5), 0.0));
+    let material3 = Arc::from(Metal::new(RGB::new(0.7, 0.6, 0.5), 0.0));
     world.add(Box::new(Sphere::new(Vector3::new(4.0, 1.0, 0.0), 1.0, material3)));
 
     world

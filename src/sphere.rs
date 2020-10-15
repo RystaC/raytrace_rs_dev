@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::vector::*;
 use crate::ray::Ray;
@@ -8,13 +8,13 @@ use crate::material::Material;
 pub struct HitRecord {
     pub position: Vector3,
     pub normal: Vector3,
-    pub material: Rc<dyn Material>,
+    pub material: Arc<dyn Material>,
     pub t: f64,
     pub front: bool,
 }
 
 impl HitRecord {
-    pub fn new(material: Rc<dyn Material>) -> Self {
+    pub fn new(material: Arc<dyn Material>) -> Self {
         Self { position: Vector3::new(0.0, 0.0, 0.0), normal: Vector3::new(0.0, 0.0, 0.0), material, t: 0.0, front: false }
     }
     #[inline(always)]
@@ -24,18 +24,18 @@ impl HitRecord {
     }
 }
 
-pub trait Hittable {
+pub trait Hittable: Sync + Send {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64, record: &mut HitRecord) -> bool;
 }
 
 pub struct Sphere {
     pub center: Vector3,
     pub radius: f64,
-    pub material: Rc<dyn Material>,
+    pub material: Arc<dyn Material>,
 }
 
 impl Sphere {
-    pub fn new(center: Vector3, radius: f64, material: Rc<dyn Material>) -> Self {
+    pub fn new(center: Vector3, radius: f64, material: Arc<dyn Material>) -> Self {
         Self { center, radius, material }
     }
 }
