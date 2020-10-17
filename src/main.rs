@@ -15,7 +15,7 @@ use raytrace_rs::buffer::*;
 
 fn main() {
     // Config for parallelism
-    let division = 4;
+    let division = 16;
 
     // RNG
     let mut rand = XorShift::new(SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos() as u64);
@@ -81,6 +81,7 @@ fn main() {
                 }
                 eprint!("\r    Progress(thread{}): {:.1}% ({}/{}) done.", n, (((i + 1) - proc_div * n) as f64 / proc_div as f64) * 100.0, (i + 1) - proc_div * n, proc_div);
             }
+            eprintln!("    Thread{} finished.", n)
         });
         thread_handlers.push(handle);
     }
@@ -133,12 +134,12 @@ fn random_scene(rand: &mut XorShift) -> HittableList {
             let center = Vector3::new(a as f64 + 0.9 * rand.next_normalize(), 0.2, b as f64 + 0.9 * rand.next_normalize());
 
             if (center - Vector3::new(4.0, 0.2, 0.0)).norm() > 0.9 {
-                if choose_mat < 0.8 {
+                if choose_mat < 0.7 {
                     let albedo = RGB::new(rand.next_normalize(), rand.next_normalize(), rand.next_normalize());
                     let sphere_material = Arc::from(Lambertian::new(albedo));
                     world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
                 }
-                else if choose_mat < 0.95 {
+                else if choose_mat < 0.9 {
                     let albedo = RGB::new(rand.next_normalize(), rand.next_normalize(), rand.next_normalize());
                     let fuzz = rand.next_bounded(0.0, 0.5);
                     let sphere_material = Arc::from(Metal::new(albedo, fuzz));
