@@ -8,3 +8,4 @@ pub mod hittable_list;
 pub mod camera;
 pub mod material;
 pub mod buffer;
+pub mod moving_sphere;

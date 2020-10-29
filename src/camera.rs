@@ -12,10 +12,12 @@ pub struct Camera {
     v: Vector3,
     w: Vector3,
     lens_radius: f64,
+    t0: f64,
+    t1: f64,
 }
 
 impl Camera {
-    pub fn new(lookfrom: Vector3, lookat: Vector3, vup: Vector3, vfov: f64, aspect_ratio: f64, aperture: f64, focus_dist: f64) -> Self {
+    pub fn new(lookfrom: Vector3, lookat: Vector3, vup: Vector3, vfov: f64, aspect_ratio: f64, aperture: f64, focus_dist: f64, t0: f64, t1: f64) -> Self {
         let theta = degrees_to_radians(vfov);
         let h = f64::tan(theta / 2.0);
         let viewport_height = 2.0 * h;
@@ -33,13 +35,13 @@ impl Camera {
 
         let lens_radius = aperture / 2.0;
 
-        Self { origin, lower_left_corner, horizontal, vertical, u, v, w, lens_radius }
+        Self { origin, lower_left_corner, horizontal, vertical, u, v, w, lens_radius, t0, t1 }
     }
 
     pub fn get_ray(&self, u: f64, v: f64, rand: &mut XorShift) -> Ray {
         let rd = self.lens_radius * Vector3::rand_in_unit_disk(rand);
         let offset = self.u * rd.x + self.v * rd.y;
-        Ray::new(self.origin + offset, self.lower_left_corner + u * self.horizontal + v * self.vertical - self.origin - offset)
+        Ray::new(self.origin + offset, self.lower_left_corner + u * self.horizontal + v * self.vertical - self.origin - offset, rand.next_bounded(self.t0, self.t1))
     }
 }
 

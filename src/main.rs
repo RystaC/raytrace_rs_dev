@@ -12,6 +12,7 @@ use raytrace_rs::hittable_list::*;
 use raytrace_rs::camera::*;
 use raytrace_rs::material::*;
 use raytrace_rs::buffer::*;
+use raytrace_rs::moving_sphere::*;
 
 fn main() {
     // Config for parallelism
@@ -36,7 +37,7 @@ fn main() {
     let vup = Vector3::new(0.0, 1.0, 0.0);
     let dist_to_focus = 10.0;
     let aperture = 0.1;
-    let camera = Arc::from(Camera::new(lookfrom, lookat, vup, 20.0, aspect, aperture, dist_to_focus));
+    let camera = Arc::from(Camera::new(lookfrom, lookat, vup, 20.0, aspect, aperture, dist_to_focus, 0.0, 1.0));
 
     // Buffer
     let buffer = Buffer::new(width, height);
@@ -107,7 +108,7 @@ fn ray_color(ray: &Ray, world: &HittableList, depth: i32, rand: &mut XorShift) -
     if depth <= 0 { return RGB::new(0.0, 0.0, 0.0); }
 
     if world.hit(ray, 0.0001, f64::MAX, &mut record) {
-        let mut scattered = Ray::new(Vector3::new(0.0, 0.0, 0.0), Vector3::new(0.0, 0.0, 0.0));
+        let mut scattered = Ray::new(Vector3::new(0.0, 0.0, 0.0), Vector3::new(0.0, 0.0, 0.0), 0.0);
         let mut attenuation = RGB::new(0.0, 0.0, 0.0);
         if record.material.scatter(ray, &record, &mut attenuation, &mut scattered, rand) {
             attenuation * ray_color(&scattered, world, depth - 1, rand)
@@ -137,7 +138,8 @@ fn random_scene(rand: &mut XorShift) -> HittableList {
                 if choose_mat < 0.7 {
                     let albedo = RGB::new(rand.next_normalize(), rand.next_normalize(), rand.next_normalize());
                     let sphere_material = Arc::from(Lambertian::new(albedo));
-                    world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
+                    let center2 = center + Vector3::new(0.0, rand.next_bounded(0.0, 0.5), 0.0);
+                    world.add(Box::new(MovingSphere::new(center, center2, 0.0, 1.0, 0.2, sphere_material)));
                 }
                 else if choose_mat < 0.9 {
                     let albedo = RGB::new(rand.next_normalize(), rand.next_normalize(), rand.next_normalize());
