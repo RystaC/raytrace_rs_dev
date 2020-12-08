@@ -10,12 +10,14 @@ pub struct HitRecord {
     pub normal: Vector3,
     pub material: Arc<dyn Material>,
     pub t: f64,
+    pub u: f64,
+    pub v: f64,
     pub front: bool,
 }
 
 impl HitRecord {
     pub fn new(material: Arc<dyn Material>) -> Self {
-        Self { position: Vector3::new(0.0, 0.0, 0.0), normal: Vector3::new(0.0, 0.0, 0.0), material, t: 0.0, front: false }
+        Self { position: Vector3::new(0.0, 0.0, 0.0), normal: Vector3::new(0.0, 0.0, 0.0), material, t: 0.0, u: 0.0, v: 0.0, front: false }
     }
     #[inline(always)]
     pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: Vector3) {
@@ -68,6 +70,7 @@ impl Hittable for Sphere {
                 record.position = ray.at(record.t);
                 let outward_normal = (record.position - self.center) / self.radius;
                 record.set_face_normal(ray, outward_normal);
+                get_sphere_uv(outward_normal, &mut record.u, &mut record.v);
                 record.material = self.material.clone();
                 return true;
             }
@@ -78,4 +81,12 @@ impl Hittable for Sphere {
         else { false }
 
     }
+}
+
+fn get_sphere_uv(p: Vector3, u: &mut f64, v: &mut f64) {
+    let theta = -p.y.acos();
+    let phi = -p.z.atan2(p.x) + std::f64::consts::PI;
+
+    *u = phi / (2.0 * std::f64::consts::PI);
+    *v = theta / std::f64::consts::PI;
 }

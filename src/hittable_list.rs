@@ -1,5 +1,5 @@
 use crate::sphere::*;
-use super::ray::Ray;
+use crate::ray::*;
 
 pub struct HittableList {
     objects: Vec<Box<dyn Hittable>>,

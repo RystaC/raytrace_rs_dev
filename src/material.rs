@@ -1,20 +1,27 @@
+use ::std::sync::Arc;
+
 use crate::sphere::*;
 use crate::rgb::*;
 use crate::ray::*;
 use crate::vector::*;
 use crate::xorshift::*;
+use crate::texture::*;
 
 pub trait Material: Sync + Send {
     fn scatter(&self, ray_in: &Ray, record: &HitRecord, attenuation: &mut RGB, scattered: &mut Ray, rand: &mut XorShift) -> bool;
 }
 
 pub struct Lambertian {
-    albedo: RGB,
+    albedo: Arc<dyn Texture>,
 }
 
 impl Lambertian {
-    pub fn new(albedo: RGB) -> Self {
-        Self { albedo }
+    pub fn new(a: RGB) -> Self {
+        Self { albedo: Arc::from(SolidColor::new(a)) }
+    }
+
+    pub fn from(t: Arc<dyn Texture>) -> Self {
+        Self { albedo: t}
     }
 }
 
@@ -23,7 +30,7 @@ impl Material for Lambertian {
     fn scatter(&self, ray_in: &Ray, record: &HitRecord, attenuation: &mut RGB, scattered: &mut Ray, rand: &mut XorShift) -> bool {
         let scatter_direction = record.normal + Vector3::randomized(rand);
         *scattered = Ray::new(record.position, scatter_direction, ray_in.time);
-        *attenuation = self.albedo;
+        *attenuation = self.albedo.value(record.u, record.v, record.position);
         true
     }
 }

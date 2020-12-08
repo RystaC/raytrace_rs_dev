@@ -13,6 +13,7 @@ use raytrace_rs::camera::*;
 use raytrace_rs::material::*;
 use raytrace_rs::buffer::*;
 use raytrace_rs::moving_sphere::*;
+use raytrace_rs::texture::*;
 
 fn main() {
     // Config for parallelism
@@ -126,8 +127,8 @@ fn ray_color(ray: &Ray, world: &HittableList, depth: i32, rand: &mut XorShift) -
 fn random_scene(rand: &mut XorShift) -> HittableList {
     let mut world = HittableList::new();
 
-    let ground_material = Arc::from(Lambertian::new(RGB::new(0.5, 0.5, 0.5)));
-    world.add(Box::new(Sphere::new(Vector3::new(0.0, -1000.0, 0.0), 1000.0, ground_material)));
+    let checker = Arc::from(Lambertian::from(Arc::from(CheckerTexture::new(RGB::new(0.2, 0.3, 0.1), RGB::new(0.9, 0.9, 0.9)))));
+    world.add(Box::new(Sphere::new(Vector3::new(0.0, -1000.0, 0.0), 1000.0, checker)));
 
     for a in -11..11 {
         for b in -11..11 {

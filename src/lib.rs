@@ -9,3 +9,4 @@ pub mod camera;
 pub mod material;
 pub mod buffer;
 pub mod moving_sphere;
+pub mod texture;
