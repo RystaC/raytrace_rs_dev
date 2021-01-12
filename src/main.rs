@@ -12,8 +12,8 @@ use raytrace_rs::hittable_list::*;
 use raytrace_rs::camera::*;
 use raytrace_rs::material::*;
 use raytrace_rs::buffer::*;
-use raytrace_rs::moving_sphere::*;
 use raytrace_rs::texture::*;
+use raytrace_rs::constant_medium::*;
 
 fn main() {
     // Config for parallelism
@@ -111,10 +111,11 @@ fn ray_color(ray: &Ray, world: &HittableList, depth: i32, rand: &mut XorShift) -
     if world.hit(ray, 0.0001, f64::MAX, &mut record) {
         let mut scattered = Ray::new(Vector3::new(0.0, 0.0, 0.0), Vector3::new(0.0, 0.0, 0.0), 0.0);
         let mut attenuation = RGB::new(0.0, 0.0, 0.0);
+        let emitted = record.material.emitted(record.u, record.v, record.position);
         if record.material.scatter(ray, &record, &mut attenuation, &mut scattered, rand) {
-            attenuation * ray_color(&scattered, world, depth - 1, rand)
+            emitted + attenuation * ray_color(&scattered, world, depth - 1, rand)
         }
-        else { RGB::new(0.0, 0.0, 0.0) }
+        else { emitted }
     }
 
     else {
@@ -139,8 +140,7 @@ fn random_scene(rand: &mut XorShift) -> HittableList {
                 if choose_mat < 0.7 {
                     let albedo = RGB::new(rand.next_normalize(), rand.next_normalize(), rand.next_normalize());
                     let sphere_material = Arc::from(Lambertian::new(albedo));
-                    let center2 = center + Vector3::new(0.0, rand.next_bounded(0.0, 0.5), 0.0);
-                    world.add(Box::new(MovingSphere::new(center, center2, 0.0, 1.0, 0.2, sphere_material)));
+                    world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
                 }
                 else if choose_mat < 0.9 {
                     let albedo = RGB::new(rand.next_normalize(), rand.next_normalize(), rand.next_normalize());
@@ -149,7 +149,7 @@ fn random_scene(rand: &mut XorShift) -> HittableList {
                     world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
                 }
                 else {
-                    let sphere_material = Arc::from(Dielectric::new(1.5));
+                    let sphere_material = Arc::from(DiffuseLight::new(RGB::new(32.0, 0.0, 0.0)));
                     world.add(Box::new(Sphere::new(center, 0.2, sphere_material)));
                 }
             }
@@ -159,11 +159,11 @@ fn random_scene(rand: &mut XorShift) -> HittableList {
     let material1 = Arc::from(Dielectric::new(1.5));
     world.add(Box::new(Sphere::new(Vector3::new(0.0, 1.0, 0.0), 1.0, material1)));
 
-    let material2 = Arc::from(Lambertian::new(RGB::new(0.4, 0.2, 0.1)));
-    world.add(Box::new(Sphere::new(Vector3::new(-4.0, 1.0, 0.0), 1.0, material2)));
+    let material2 = Arc::from(Lambertian::new(RGB::new(0.73, 0.73, 0.73)));
+    world.add(Box::new(ConstantMedium::new(Arc::new(Sphere::new(Vector3::new(4.0, 1.0, 0.0), 1.0, material2)), 1.5, RGB::new(1.0, 1.0, 1.0))));
 
     let material3 = Arc::from(Metal::new(RGB::new(0.7, 0.6, 0.5), 0.0));
-    world.add(Box::new(Sphere::new(Vector3::new(4.0, 1.0, 0.0), 1.0, material3)));
+    world.add(Box::new(Sphere::new(Vector3::new(-4.0, 1.0, 0.0), 1.0, material3)));
 
     world
 }

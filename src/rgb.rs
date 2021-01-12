@@ -44,6 +44,14 @@ fn gamma_correct(x: f64) -> u8 {
     (x.powf(1.0 / 2.2) * 255.0 + 0.5) as u8
 }
 
+impl Add for RGB {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self { red: self.red + rhs.red, green: self.green + rhs.green, blue: self.blue + rhs.blue }
+    }
+}
+
 impl AddAssign for RGB {
     fn add_assign(&mut self, rhs: Self) {
         *self = Self {
@@ -75,5 +83,13 @@ impl Mul for RGB {
 
     fn mul(self, rhs: RGB) -> Self::Output {
         Self { red: self.red * rhs.red, green: self.green * rhs.green, blue: self.blue * rhs.blue }
+    }
+}
+
+impl Div<f64> for RGB {
+    type Output = Self;
+    
+    fn div(self, rhs: f64) -> Self::Output {
+        Self { red: self.red / rhs, green: self.green / rhs, blue: self.blue / rhs }
     }
 }

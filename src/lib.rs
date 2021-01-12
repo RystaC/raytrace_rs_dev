@@ -10,3 +10,4 @@ pub mod material;
 pub mod buffer;
 pub mod moving_sphere;
 pub mod texture;
+pub mod constant_medium;

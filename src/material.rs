@@ -9,6 +9,10 @@ use crate::texture::*;
 
 pub trait Material: Sync + Send {
     fn scatter(&self, ray_in: &Ray, record: &HitRecord, attenuation: &mut RGB, scattered: &mut Ray, rand: &mut XorShift) -> bool;
+    #[allow(unused_variables)]
+    fn emitted(&self, u: f64, v: f64, p: Vector3) -> RGB {
+        RGB::new(0.0, 0.0, 0.0)
+    }
 }
 
 pub struct Lambertian {
@@ -107,4 +111,51 @@ fn schlick(cosine: f64, ref_idx: f64) -> f64 {
     let r0 = (1.0 - ref_idx) / (1.0 + ref_idx);
     let r = r0 * r0;
     r + (1.0 - r) * f64::powf(1.0 - cosine, 5.0)
+}
+
+pub struct DiffuseLight {
+    emit: Arc<dyn Texture>,
+}
+
+impl DiffuseLight {
+    pub fn new(c: RGB) -> Self {
+        Self { emit: Arc::from(SolidColor::new(c)) }
+    }
+
+    pub fn from(emit: Arc<dyn Texture>) -> Self {
+        Self { emit }
+    }
+}
+
+impl Material for DiffuseLight {
+    #[allow(unused_variables)]
+    fn scatter(&self, ray_in: &Ray, record: &HitRecord, attenuation: &mut RGB, scattered: &mut Ray, rand: &mut XorShift) -> bool {
+        false
+    }
+
+    fn emitted(&self, u: f64, v: f64, p: Vector3) -> RGB {
+        self.emit.value(u, v, p)
+    }
+}
+
+pub struct Isotropic {
+    albedo: Arc<dyn Texture>,
+}
+
+impl Isotropic {
+    pub fn new(c: RGB) -> Self {
+        Self { albedo: Arc::new(SolidColor::new(c)) }
+    }
+
+    pub fn from(a: Arc<dyn Texture>) -> Self {
+        Self { albedo: a }
+    }
+}
+
+impl Material for Isotropic {
+    fn scatter(&self, ray_in: &Ray, record: &HitRecord, attenuation: &mut RGB, scattered: &mut Ray, rand: &mut XorShift) -> bool {
+        *scattered = Ray::new(record.position, rand_unit_sphere(rand), ray_in.time);
+        *attenuation = self.albedo.value(record.u, record.v, record.position);
+        true
+    }
 }
